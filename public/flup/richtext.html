@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rich Text Editor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/4.9.11/tinymce.min.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-4xl font-bold text-center text-gray-800 mb-8">Rich Text Editor</h1>
+        
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <textarea id="editor"></textarea>
+            
+            <button onclick="saveContent()" 
+                    class="mt-4 bg-blue-600 text-white py-2 px-4 rounded-lg 
+                    hover:bg-blue-700 transition duration-300">
+                Save Content
+            </button>
+        </div>
+    </div>
+
+    <script>
+        tinymce.init({
+            selector: '#editor',
+            height: 500,
+            plugins: [
+                'advlist autolink lists link image charmap print preview anchor',
+                'searchreplace visualblocks code fullscreen',
+                'insertdatetime media table paste code'
+            ],
+            toolbar: 'undo redo | formatselect | bold italic | alignleft aligncenter alignright | bullist numlist | link image | code',
+            paste_data_images: true,
+            paste_as_text: false,
+            paste_enable_default_filters: true,
+            setup: function(editor) {
+                fetch('/get-content')
+                    .then(response => response.json())
+                    .then(data => {
+                        editor.setContent(data.content);
+                    });
+            }
+        });
+
+        async function saveContent() {
+            const content = tinymce.activeEditor.getContent();
+            try {
+                const response = await fetch('/save-content', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ content })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    alert('Content saved successfully!');
+                }
+            } catch (error) {
+                console.error('Error saving content:', error);
+            }
+        }
+    </script>
+</body>
+</html>

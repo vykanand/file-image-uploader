@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vehicle Management</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      height: 100vh;
+    }
+    .container {
+      display: flex;
+      width: 100%;
+    }
+    .sidebar {
+      width: 250px;
+      background-color: #333;
+      color: white;
+      display: flex;
+      flex-direction: column;
+    }
+    .sidebar header {
+      padding: 20px;
+      text-align: center;
+      font-size: 1.5em;
+      border-bottom: 1px solid #444;
+    }
+    .sidebar nav {
+      flex-grow: 1;
+      padding: 20px;
+    }
+    .sidebar nav button {
+      width: 100%;
+      background: none;
+      color: white;
+      padding: 12px;
+      text-align: left;
+      border: none;
+      cursor: pointer;
+    }
+    .sidebar nav button:hover {
+      background-color: #444;
+    }
+    .main-content {
+      flex-grow: 1;
+      padding: 20px;
+      background-color: #f8f8f8;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-content {
+      background-color: white;
+      padding: 20px;
+      border-radius: 5px;
+      width: 400px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #ddd;
+      text-align: left;
+    }
+    button {
+      background-color: #007bff;
+      color: white;
+      padding: 6px 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .status-active {
+      background-color: #28a745;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+    .status-expiring {
+      background-color: #ffc107;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+    .status-default {
+      background-color: #6c757d;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <header>Vehicle Manager</header>
+      <nav>
+        <button id="dashboardTabBtn">Dashboard</button>
+        <button id="vehiclesTabBtn">Vehicles</button>
+      </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Dashboard Tab -->
+      <div id="dashboardTab" class="tab-content active">
+        <h1>Dashboard</h1>
+        <div>
+          <div>Total Vehicles: <span id="totalVehicles">0</span></div>
+          <div>Expiring Soon: <span id="expiringSoonVehicles">0</span></div>
+          <div>Active Vehicles: <span id="activeVehicles">0</span></div>
+        </div>
+      </div>
+
+      <!-- Vehicles Tab -->
+      <div id="vehiclesTab" class="tab-content">
+        <h1>Vehicles</h1>
+        <button id="addVehicleBtn">Add Vehicle</button>
+
+        <table id="vehicleTable">
+          <thead>
+            <tr>
+              <th>Registration</th>
+              <th>Type</th>
+              <th>Owner</th>
+              <th>RC Expiry</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Dynamic Vehicle Rows -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div id="modal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <h2 id="modalTitle">Add Vehicle</h2>
+      <form id="vehicleForm">
+        <input type="text" id="registration" placeholder="Registration Number" required><br>
+        <select id="type" required>
+          <option value="">Select Type</option>
+          <option value="Car">Car</option>
+          <option value="Truck">Truck</option>
+          <option value="Motorcycle">Motorcycle</option>
+        </select><br>
+        <input type="text" id="owner" placeholder="Owner Name" required><br>
+        <input type="date" id="rcExpiry" required><br>
+        <button type="submit">Add</button>
+        <button type="button" id="cancelBtn">Cancel</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // Data
+    let vehicles = [
+      { id: 1, registration: 'DL12AB1234', type: 'Car', owner: 'John Doe', rcExpiry: '2024-12-31', status: 'Active' },
+      { id: 2, registration: 'HR26CD5678', type: 'Truck', owner: 'Jane Smith', rcExpiry: '2024-09-15', status: 'Expiring Soon' },
+      { id: 3, registration: 'UP32EF9012', type: 'Motorcycle', owner: 'Peter Jones', rcExpiry: '2025-03-20', status: 'Active' },
+    ];
+
+    let editingVehicleId = null;
+
+    // Elements
+    const dashboardTabBtn = document.getElementById('dashboardTabBtn');
+    const vehiclesTabBtn = document.getElementById('vehiclesTabBtn');
+    const dashboardTab = document.getElementById('dashboardTab');
+    const vehiclesTab = document.getElementById('vehiclesTab');
+    const addVehicleBtn = document.getElementById('addVehicleBtn');
+    const modal = document.getElementById('modal');
+    const modalTitle = document.getElementById('modalTitle');
+    const vehicleForm = document.getElementById('vehicleForm');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const vehicleTable = document.getElementById('vehicleTable').getElementsByTagName('tbody')[0];
+
+    // Functions
+    function updateDashboard() {
+      document.getElementById('totalVehicles').textContent = vehicles.length;
+      document.getElementById('expiringSoonVehicles').textContent = vehicles.filter(v => v.status === 'Expiring Soon').length;
+      document.getElementById('activeVehicles').textContent = vehicles.filter(v => v.status === 'Active').length;
+    }
+
+    function renderVehicleTable() {
+      vehicleTable.innerHTML = '';
+      vehicles.forEach(vehicle => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${vehicle.registration}</td>
+          <td>${vehicle.type}</td>
+          <td>${vehicle.owner}</td>
+          <td>${vehicle.rcExpiry}</td>
+          <td>
+            <span class="status-${vehicle.status.toLowerCase().replace(' ', '-')}"">${vehicle.status}</span>
+          </td>
+          <td>
+            <button onclick="editVehicle(${vehicle.id})">Edit</button>
+            <button onclick="deleteVehicle(${vehicle.id})">Delete</button>
+          </td>
+        `;
+        vehicleTable.appendChild(row);
+      });
+    }
+
+    function openModal(isEditMode = false, vehicle = {}) {
+      modal.style.display = 'flex';
+      if (isEditMode) {
+        modalTitle.textContent = 'Edit Vehicle';
+        document.getElementById('registration').value = vehicle.registration;
+        document.getElementById('type').value = vehicle.type;
+        document.getElementById('owner').value = vehicle.owner;
+        document.getElementById('rcExpiry').value = vehicle.rcExpiry;
+        editingVehicleId = vehicle.id;
+      } else {
+        modalTitle.textContent = 'Add Vehicle';
+        vehicleForm.reset();
+        editingVehicleId = null;
+      }
+    }
+
+    function closeModal() {
+      modal.style.display = 'none';
+    }
+
+    function addVehicle(event) {
+      event.preventDefault();
+
+      const newVehicle = {
+        id: vehicles.length + 1,
+        registration: document.getElementById('registration').value,
+        type: document.getElementById('type').value,
+        owner: document.getElementById('owner').value,
+        rcExpiry: document.getElementById('rcExpiry').value,
+        status: 'Active'
+      };
+
+      vehicles.push(newVehicle);
+      closeModal();
+      renderVehicleTable();
+      updateDashboard();
+    }
+
+    function updateVehicle(event) {
+      event.preventDefault();
+
+      const updatedVehicle = {
+        id: editingVehicleId,
+        registration: document.getElementById('registration').value,
+        type: document.getElementById('type').value,
+        owner: document.getElementById('owner').value,
+        rcExpiry: document.getElementById('rcExpiry').value,
+        status: 'Active'
+      };
+
+      vehicles = vehicles.map(vehicle => (vehicle.id === editingVehicleId ? updatedVehicle : vehicle));
+      closeModal();
+      renderVehicleTable();
+      updateDashboard();
+    }
+
+    function deleteVehicle(id) {
+      vehicles = vehicles.filter(vehicle => vehicle.id !== id);
+      renderVehicleTable();
+      updateDashboard();
+    }
+
+    // Event Listeners
+    dashboardTabBtn.addEventListener('click', () => {
+      dashboardTab.classList.add('active');
+      vehiclesTab.classList.remove('active');
+    });
+
+    vehiclesTabBtn.addEventListener('click', () => {
+      dashboardTab.classList.remove('active');
+      vehiclesTab.classList.add('active');
+    });
+
+    addVehicleBtn.addEventListener('click', () => openModal());
+
+    cancelBtn.addEventListener('click', closeModal);
+
+    vehicleForm.addEventListener('submit', event => {
+      if (editingVehicleId) {
+        updateVehicle(event);
+      } else {
+        addVehicle(event);
+      }
+    });
+
+    // Initialize
+    renderVehicleTable();
+    updateDashboard();
+  </script>
+</body>
+</html>

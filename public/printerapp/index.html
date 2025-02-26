@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KYC Form</title>
+    <style>
+        body {
+            font-family: sans-serif;
+        }
+        .container {
+            width: 800px;
+            margin: 0 auto;
+        }
+        h2 {
+            background-color: #c20078;
+            color: white;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .header {
+            background-color: #c20078;
+            color: white;
+            padding: 5px;
+            font-size: larger;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        td {
+            padding: 5px;
+            border: 1px solid #ccc;
+        }
+        input[type="text"],
+        input[type="number"] {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 5px;
+            border: 1px solid #ccc;
+
+        }
+
+        input[type="checkbox"],
+        input[type="radio"] {
+            margin-right: 5px;
+
+        }
+
+        .photo {
+          width: 100px;
+          height: 100px;
+          background-color: #eee;  /* Light gray background for the photo area */
+          border: 1px solid #ccc;
+        }
+
+
+    </style>
+</head>
+<body>
+    <div class="container">
+    <div class="header">CKYC & KRA KYC FORM <span style="float: right;">AXIS MUTUAL FUND</span></div>
+
+        <h2>KNOW YOUR CLIENT APPLICATION FORM (For Individuals only)</h2>
+        <p>Please fill the form in English and in BLOCK Letters) Application Type <input type="checkbox">New <input type="checkbox">Update KYC Number* </p>
+         <p>Fields marked with * are mandatory fields  KYC Type* <input type="radio" name="kyc_type" >Normal (PAN is mandatory) <input type="radio" name="kyc_type">PAN Exempt Investors (Refer instruction K) </p>
+
+        <h2>1. IDENTITY DETAILS (Please refer instruction A at the end)</h2>
+
+        <table>
+             <tr>
+                <td>PAN*</td>
+                <td colspan="6"><input type="text" value="BUOPX123456Z"></td>
+                <td colspan="3">Please enclose a duly attested copy of your PAN Card</td>
+             </tr>
+            <tr>
+                <td>Name (Same as ID proof)*</td>
+                <td style="width:20px;"><input type="text" value="MR"></td>
+                <td colspan="2"><input type="text" value="RAVI"></td>
+                <td>First Name</td>
+                <td>Middle Name</td>
+                <td>Last Name</td>
+                <td colspan="3">MADUGULA</td>
+            </tr>
+            <tr>
+                <td>Maiden Name (if any)</td>
+                <td colspan="3"><input type="text"></td>
+                <td colspan="3"></td>
+                 <td colspan="3"></td>
+            </tr>
+            <tr>
+                <td>Father / Spouse Name*</td>
+                <td style="width:20px;"><input type="text" value="MR"></td>
+                <td colspan="2"><input type="text" value="GOPAL RAO"></td>
+                 <td colspan="3"></td>
+                  <td colspan="3">MADUGULA</td>
+            </tr>
+            <tr>
+                <td>Mother Name*</td>
+                <td style="width:20px;"><input type="text" value="MRS"></td>
+                 <td colspan="2"><input type="text" value="LAKSHMI"></td>
+                 <td colspan="3"></td>
+                  <td colspan="3">MADUGULA</td>
+            </tr>
+            <tr>
+                <td>Date of Birth*</td>
+                <td colspan="3"><input type="text" value="25071990"></td>
+                <td colspan="3"></td>
+                 <td rowspan="6" colspan="3" style="vertical-align: top;">
+                      <div class="photo">PHOTO</div>
+                 <div style="text-align: center; margin-top: 5px;">Signature / Thumb Impression</div>
+                </td>
+
+            </tr>
+            <tr>
+                <td>Gender*</td>
+                <td colspan="3"><input type="radio" name="gender" checked> M-Male <input type="radio" name="gender"> F-Female <input type="radio" name="gender">T-Transgender </td>
+                <td colspan="3"></td>
+            </tr>
+            <tr>
+                <td>Marital Status*</td>
+                <td colspan="3"><input type="radio" name="marital_status" checked>Married <input type="radio" name="marital_status">Unmarried <input type="radio" name="marital_status">Others - Country <input type="text" style="width: 70px">Country Code</td>
+
+            </tr>
+
+             <tr>
+                <td>Citizenship*</td>
+                <td colspan="3"><input type="radio" name="citizenship" checked> N- Indian <input type="radio" name="citizenship"> Non Resident Indian <input type="radio" name="citizenship"> Person of Indian Origin</td>
+
+            </tr>
+            <tr>
+                <td>Residential Status*</td>
+                <td colspan="3"><input type="radio" name="residential_status" checked> Resident Individual <input type="radio" name="residential_status"> Foreign National</td>
+
+            </tr>
+
+             <tr>
+                <td>Occupation Type*</td>
+                <td colspan="3"><input type="checkbox">S-Service <input type="checkbox" checked>Private Sector <input type="checkbox">Public Sector <input type="checkbox">Government Sector) <input type="checkbox">Retired <input type="checkbox">Housewife <input type="checkbox">Student <br><input type="checkbox"> O-Others <input type="checkbox" checked>Professional <input type="checkbox">Self Employed <br><input type="checkbox">B-Business <br><input type="checkbox">X-Not Categorised</td>
+
+            </tr>
+
+        </table>
+<!--Rest of the form continues similarly  -->
+
+
+    </div>
+</body>
+</html>
