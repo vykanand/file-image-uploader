@@ -1,10 +1,10 @@
 {
-  "name": "aiserver",
+  "name": "fileimage server",
   "version": "1.0.0",
-  "main": "aiSessionChat.js",
+  "main": "file-image-server.js",
   "type": "module",
   "scripts": {
-    "start": "node aiserver.js",
+    "start": "node file-image-server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
