@@ -103,7 +103,8 @@
 
     <script>
         // Define API base URL with port 3000
-        const apiBaseUrl = `${window.location.protocol}//${window.location.hostname}`;
+        // const apiBaseUrl = `${window.location.protocol}//${window.location.hostname}`;
+        const apiBaseUrl = `${window.location.protocol}//${window.location.hostname}${window.location.port ? ':' + window.location.port : ''}`;
         
         // Preview functionality for OCR and Image Upload
         function showLoader() {
@@ -148,31 +149,31 @@
             if (!file) return;
 
             const formData = new FormData();
-            formData.append('image', file);
+            formData.append('file', file);  // Use 'file' to match the server's upload.single("file")
 
             try {
-                const uploadResponse = await fetch(`${apiBaseUrl}/uploadimage`, {
+                // Direct OCR request - no need for two separate API calls
+                const response = await fetch(`${apiBaseUrl}/ocr`, {
                     method: 'POST',
                     body: formData
                 });
-                const uploadData = await uploadResponse.json();
-
-                const ocrResponse = await fetch(`${apiBaseUrl}/ocr`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ imageUrl: uploadData.imageUrl })
-                });
-                const ocrData = await ocrResponse.json();
-
+                
+                const data = await response.json();
+                
                 const resultDiv = document.getElementById('ocrResult');
-                resultDiv.innerHTML = `<p class="text-gray-700">${ocrData.ocrText}</p>`;
+                resultDiv.innerHTML = `
+                    <p class="text-gray-700">${data.ocrText}</p>
+                `;
                 resultDiv.classList.remove('hidden');
                 hideLoader();
             } catch (error) {
                 console.error('Error:', error);
+                document.getElementById('ocrResult').innerHTML = '<p class="text-red-500">Error processing image</p>';
+                document.getElementById('ocrResult').classList.remove('hidden');
                 hideLoader();
             }
         }
+
 
         async function uploadImage() {
             showLoader();

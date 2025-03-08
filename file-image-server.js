@@ -1,65 +1,75 @@
 import express from "express";
 import { Client } from "@gradio/client";
 import fetch from "node-fetch";
-// Ensure you have node-fetch installed to use fetch in Node.js
 import multer from "multer";
-import uploadBB from "./uploadToImgBB.js"; // Import the function to upload to ImgBB
+import uploadBB from "./uploadToImgBB.js";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
 import cors from "cors";
+import analyzeImage from "./gemini-ocr.js";
 
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: "200mb" }));
 app.use(express.urlencoded({ limit: "200mb", extended: true }));
 
+// Create __dirname equivalent for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
-export async function getOcrTextFromImageUrl(imageUrl) {
+// Function to download image from URL and save it locally
+async function downloadImageFromUrl(imageUrl) {
   try {
-    console.log("1. Starting OCR with URL:", imageUrl);
+    console.log("1. Downloading image from URL:", imageUrl);
 
     const response = await fetch(imageUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch image: ${response.statusText}`);
+    }
+
     const buffer = await response.arrayBuffer();
-    const exampleImage = new Blob([buffer], { type: "image/jpeg" });
 
-    console.log("Image blob details:", {
-      size: exampleImage.size,
-      type: exampleImage.type,
-      blob: exampleImage,
-    });
+    // Create a temporary file path
+    const tempFilePath = path.join(
+      __dirname,
+      "uploads",
+      `temp-${Date.now()}.jpg`
+    );
 
+    // Ensure uploads directory exists
+    if (!fs.existsSync(path.join(__dirname, "uploads"))) {
+      fs.mkdirSync(path.join(__dirname, "uploads"), { recursive: true });
+    }
+
+    // Write the buffer to a file
+    fs.writeFileSync(tempFilePath, Buffer.from(buffer));
+
+    console.log("Image downloaded and saved to:", tempFilePath);
+    return tempFilePath;
+  } catch (error) {
+    console.error("Error downloading image:", error);
+    throw error;
+  }
+}
+
+async function tessaractOcr(imagePath) {
+  try {
+    console.log("Running Tesseract OCR on:", imagePath);
     const client = await Client.connect("kneelesh48/Tesseract-OCR");
     const result = await client.predict("/tesseract-ocr", {
-      filepath: exampleImage,
+      filepath: imagePath,
       languages: ["eng"],
     });
 
     return result.data;
   } catch (error) {
-    console.log("Error details:", {
-      name: error.name,
-      message: error.message,
-      fullError: error,
-    });
+    console.error("Error in Tesseract OCR:", error);
     throw error;
   }
 }
 
-// POST endpoint for OCR processing (using Gradio Tesseract OCR model)
-app.post("/ocr", async (req, res) => {
-  try {
-    const { imageUrl } = req.body; // Expect imageUrl to be passed in the body
-    const result = await getOcrTextFromImageUrl(imageUrl);
-    res.json({ ocrText: result });
-  } catch (error) {
-    console.error("Error during OCR processing:", error);
-    res
-      .status(500)
-      .json({ error: "An error occurred while processing the image." });
-  }
-});
 
 // Set up multer to handle file uploads
 const storage = multer.diskStorage({
@@ -127,35 +137,35 @@ app.post("/uploadfiles", upload.array("files", 10), async (req, res) => {
 });
 
 //serve multiple folders from public folder
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 // Define the base public directory
 const publicDir = path.join(__dirname, "public");
 
 // Read all directories under /public and serve them
-fs.readdirSync(publicDir).forEach((dir) => {
-  const dirPath = path.join(publicDir, dir);
+if (fs.existsSync(publicDir)) {
+  fs.readdirSync(publicDir).forEach((dir) => {
+    const dirPath = path.join(publicDir, dir);
 
-  if (fs.statSync(dirPath).isDirectory()) {
-    const route = `/${dir}/:page`; // Dynamic route to catch specific pages
-    console.log(`Serving ${dir} at ${route}`);
+    if (fs.statSync(dirPath).isDirectory()) {
+      const route = `/${dir}/:page`; // Dynamic route to catch specific pages
+      console.log(`Serving ${dir} at ${route}`);
 
-    app.get(route, (req, res) => {
-      const page = req.params.page;
-      const filePath = path.join(dirPath, page);
+      app.get(route, (req, res) => {
+        const page = req.params.page;
+        const filePath = path.join(dirPath, page);
 
-      // Check if file exists before sending
-      if (fs.existsSync(filePath)) {
-        res.sendFile(filePath);
-      } else {
-        res.status(404).send("Page not found");
-      }
-    });
+        // Check if file exists before sending
+        if (fs.existsSync(filePath)) {
+          res.sendFile(filePath);
+        } else {
+          res.status(404).send("Page not found");
+        }
+      });
 
-    // Keep static assets serving
-    app.use(`/${dir}`, express.static(dirPath));
-  }
-});
+      // Keep static assets serving
+      app.use(`/${dir}`, express.static(dirPath));
+    }
+  });
+}
 
 // Serve uploads folder for downloads
 // Add this BEFORE the static file serving lines
@@ -177,13 +187,15 @@ app.get("/api/files", (req, res) => {
 app.use("/uploads", express.static("uploads"));
 
 // And the public folder serving
-fs.readdirSync(publicDir).forEach((dir) => {
-  const dirPath = path.join(publicDir, dir);
-  if (fs.statSync(dirPath).isDirectory()) {
-    const route = `/${dir}`;
-    app.use(route, express.static(dirPath));
-  }
-});
+if (fs.existsSync(publicDir)) {
+  fs.readdirSync(publicDir).forEach((dir) => {
+    const dirPath = path.join(publicDir, dir);
+    if (fs.statSync(dirPath).isDirectory()) {
+      const route = `/${dir}`;
+      app.use(route, express.static(dirPath));
+    }
+  });
+}
 
 // Add this endpoint to handle saving editor content
 app.post("/save-content", express.json({ limit: "50mb" }), (req, res) => {
@@ -201,6 +213,37 @@ app.get("/get-content", (req, res) => {
     res.json({ content: "" });
   }
 });
+
+
+
+// POST endpoint for OCR processing
+// Direct OCR endpoint that takes a file upload
+app.post("/ocr", upload.single("file"), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
+    
+    console.log("Processing direct OCR for file:", req.file.path);
+    
+    // Process with Gemini OCR using the uploaded file path directly
+    const geminiResult = await analyzeImage(req.file.path);
+    
+    // Optionally clean up the file after processing
+    fs.unlinkSync(req.file.path);
+    
+    res.json({
+      success: true,
+      ocrText: JSON.stringify(geminiResult),
+    });
+  } catch (error) {
+    console.error("Error during OCR processing:", error);
+    res.status(500).json({ error: "An error occurred while processing the image" });
+  }
+});
+
+
+
 
 // Start the server on port 3000
 app.listen(3000, () => console.log("HTTP Server running on port 3000"));
